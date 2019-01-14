@@ -28,6 +28,10 @@ public class AdbProtocol {
 
     static {
         try {
+            //The system identity string should be "<systemtype>:<serialno>:<banner>"
+            // where systemtype is "bootloader", "device", or "host",
+            // serialno is some kind of unique ID (or empty),
+            // and banner is a human-readable version or identifier string.  The banner is used to transmit useful properties.
             CONNECT_PAYLOAD = "host::\u0000".getBytes("UTF-8");
         } catch (UnsupportedEncodingException var1) {
             ;
@@ -91,6 +95,7 @@ public class AdbProtocol {
     }
 
     public static byte[] generateConnect() {
+        //command = A_CNXN, version = 0x01000000, maxdata = 4096, system-identity-string = "host:: "
         return generateMessage(1314410051, 16777216, 4096, CONNECT_PAYLOAD);
     }
 

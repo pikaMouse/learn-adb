@@ -1,5 +1,7 @@
 package com.example.pikamouse.learn_adb.adb.lib;
 
+import android.util.Log;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +28,7 @@ public class AdbConnection implements Closeable {
     private AdbCrypto crypto;
     private boolean sentSignature;
     private HashMap<Integer, AdbStream> openStreams = new HashMap();
+    private final static String TAG = "AdbConnection";
 
     private AdbConnection() {
     }
@@ -55,10 +58,15 @@ public class AdbConnection implements Closeable {
                                 case 1163086915://A_CLSE
                                 case 1163154007://A_WRTE
                                 case 1497451343://A_OKAY
+                                    if (msg.command == 1163086915) Log.d(TAG, "A_CLSE");
+                                    if (msg.command == 1163154007) Log.d(TAG, "A_WRTE");
+                                    if (msg.command == 1497451343) Log.d(TAG, "A_OKAY");
                                     if (!AdbConnection.this.connected) {
                                         continue;
                                     }
-
+                                    // A READY message containing a remote-id which does not map to an open stream on the recipient's side is ignored.
+                                    // A WRITE message containing a remote-id which does not map to an open stream on the recipient's side is ignored.
+                                    // A CLOSE message containing a remote-id which does not map to an open stream on the recipient's side is ignored.
                                     AdbStream waitingStream = (AdbStream)AdbConnection.this.openStreams.get(msg.arg1);
                                     if (waitingStream == null) {
                                         continue;
@@ -79,6 +87,8 @@ public class AdbConnection implements Closeable {
                                         continue;
                                     }
                                 case 1213486401://A_AUTH
+                                    Log.d(TAG, "A_AUTH");
+                                    //If type is TOKEN(1), data is a random token that the recipient can sign with a private key.
                                     if (msg.arg0 != 1) {
                                         continue;
                                     }
@@ -89,9 +99,7 @@ public class AdbConnection implements Closeable {
                                     if (AdbConnection.this.sentSignature) {
                                         packet = AdbProtocol.generateAuth(3, AdbConnection.this.crypto.getAdbPublicKeyPayload());
                                     } else {
-                                        //If type is TOKEN(1), data is a random token that
-                                        //the recipient can sign with a private key. The recipient replies with an
-                                        //AUTH packet where type is SIGNATURE(2) and data is the signature.
+                                        //The recipient replies with an AUTH packet where type is SIGNATURE(2) and data is the signature.
                                         packet = AdbProtocol.generateAuth(2, AdbConnection.this.crypto.signAdbTokenPayload(msg.payload));
                                         AdbConnection.this.sentSignature = true;
                                     }
@@ -100,10 +108,12 @@ public class AdbConnection implements Closeable {
                                     AdbConnection.this.outputStream.flush();
                                     continue;
                                 case 1314410051://A_CNXN
+                                    Log.d(TAG, "A_CNXN");
                                     AdbConnection var4 = AdbConnection.this;
                                     synchronized(AdbConnection.this) {
                                         AdbConnection.this.maxData = msg.arg1;
                                         AdbConnection.this.connected = true;
+                                        //notify main thread
                                         AdbConnection.this.notifyAll();
                                     }
                                 default:
@@ -132,6 +142,7 @@ public class AdbConnection implements Closeable {
         } else {
             synchronized(this) {
                 if (!this.connected) {
+                    //wait for the connection
                     this.wait();
                 }
 
@@ -148,12 +159,15 @@ public class AdbConnection implements Closeable {
         if (this.connected) {
             throw new IllegalStateException("Already connected");
         } else {
+            //write connect command
+            //Both sides send a CONNECT message when the connection between them is established.
             this.outputStream.write(AdbProtocol.generateConnect());
             this.outputStream.flush();
             this.connectAttempted = true;
             this.connectionThread.start();
             synchronized(this) {
                 if (!this.connected) {
+                    //Main thread wait for the connection
                     this.wait();
                 }
 
@@ -165,7 +179,7 @@ public class AdbConnection implements Closeable {
     }
 
     public AdbStream open(String destination) throws UnsupportedEncodingException, IOException, InterruptedException {
-        int localId = ++this.lastLocalId;
+        int localId = ++this.lastLocalId;//The local-id may not be zero.
         if (!this.connectAttempted) {
             throw new IllegalStateException("connect() must be called first");
         } else {
@@ -181,6 +195,7 @@ public class AdbConnection implements Closeable {
 
             AdbStream stream = new AdbStream(this, localId);
             this.openStreams.put(localId, stream);
+            //write open command
             this.outputStream.write(AdbProtocol.generateOpen(localId, destination));
             this.outputStream.flush();
             synchronized(stream) {

@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.pikamouse.learn_adb.adb.AdbManager;
 import com.example.pikamouse.learn_adb.adb.Callback;
@@ -59,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         @Override
                         public void onFail(String failString) {
                             Log.d(TAG, "failString is " + failString);
+
                         }
                     });
         } else {
@@ -85,7 +87,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     super.handleMessage(msg);
                     if (msg.what == MSG_CPU) {
                         excuteCpuData();
-                        mHandler.sendEmptyMessageDelayed(MSG_CPU, NORMAL_FRAME_RATE * 1000);
+                        //mHandler.sendEmptyMessageDelayed(MSG_CPU, NORMAL_FRAME_RATE * 1000);
                     }
                 }
             };
