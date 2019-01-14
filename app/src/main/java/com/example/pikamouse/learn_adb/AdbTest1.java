@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
  * @author: jiangfeng
  * @date: 2019/1/8
  */
-public class AdbTest {
+public class AdbTest1 {
 
     public static void main(String[] args) {
         Socket socket = null;

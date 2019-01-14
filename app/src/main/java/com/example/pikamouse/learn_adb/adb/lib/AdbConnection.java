@@ -52,9 +52,9 @@ public class AdbConnection implements Closeable {
                             }
 
                             switch(msg.command) {
-                                case 1163086915:
-                                case 1163154007:
-                                case 1497451343:
+                                case 1163086915://A_CLSE
+                                case 1163154007://A_WRTE
+                                case 1497451343://A_OKAY
                                     if (!AdbConnection.this.connected) {
                                         continue;
                                     }
@@ -65,28 +65,33 @@ public class AdbConnection implements Closeable {
                                     }
 
                                     synchronized(waitingStream) {
-                                        if (msg.command == 1497451343) {
+                                        if (msg.command == 1497451343) {//A_OKAY
                                             waitingStream.updateRemoteId(msg.arg0);
                                             waitingStream.readyForWrite();
                                             waitingStream.notify();
-                                        } else if (msg.command == 1163154007) {
+                                        } else if (msg.command == 1163154007) {//A_WRTE
                                             waitingStream.addPayload(msg.payload);
                                             waitingStream.sendReady();
-                                        } else if (msg.command == 1163086915) {
+                                        } else if (msg.command == 1163086915) {//A_CLSE
                                             AdbConnection.this.openStreams.remove(msg.arg1);
                                             waitingStream.notifyClose();
                                         }
                                         continue;
                                     }
-                                case 1213486401:
+                                case 1213486401://A_AUTH
                                     if (msg.arg0 != 1) {
                                         continue;
                                     }
 
                                     byte[] packet;
+                                    //Once the recipient has tried all its private keys, it can reply with an
+                                    //AUTH packet where type is RSAPUBLICKEY(3) and data is the public key.
                                     if (AdbConnection.this.sentSignature) {
                                         packet = AdbProtocol.generateAuth(3, AdbConnection.this.crypto.getAdbPublicKeyPayload());
                                     } else {
+                                        //If type is TOKEN(1), data is a random token that
+                                        //the recipient can sign with a private key. The recipient replies with an
+                                        //AUTH packet where type is SIGNATURE(2) and data is the signature.
                                         packet = AdbProtocol.generateAuth(2, AdbConnection.this.crypto.signAdbTokenPayload(msg.payload));
                                         AdbConnection.this.sentSignature = true;
                                     }
@@ -94,7 +99,7 @@ public class AdbConnection implements Closeable {
                                     AdbConnection.this.outputStream.write(packet);
                                     AdbConnection.this.outputStream.flush();
                                     continue;
-                                case 1314410051:
+                                case 1314410051://A_CNXN
                                     AdbConnection var4 = AdbConnection.this;
                                     synchronized(AdbConnection.this) {
                                         AdbConnection.this.maxData = msg.arg1;
@@ -210,7 +215,7 @@ public class AdbConnection implements Closeable {
         if (this.connectionThread != null) {
             this.socket.close();
             this.connectionThread.interrupt();
-
+            //优先执行connectionThread线程中的方法
             try {
                 this.connectionThread.join();
             } catch (InterruptedException var2) {

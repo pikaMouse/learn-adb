@@ -66,7 +66,7 @@ public class AdbProtocol {
     public static byte[] generateMessage(int cmd, int arg0, int arg1, byte[] payload) {
         ByteBuffer message;
         if (payload != null) {
-            message = ByteBuffer.allocate(24 + payload.length).order(ByteOrder.LITTLE_ENDIAN);
+            message = ByteBuffer.allocate(24 + payload.length).order(ByteOrder.LITTLE_ENDIAN);//小端模式，高字节在高地址，低字节在低地址
         } else {
             message = ByteBuffer.allocate(24).order(ByteOrder.LITTLE_ENDIAN);
         }

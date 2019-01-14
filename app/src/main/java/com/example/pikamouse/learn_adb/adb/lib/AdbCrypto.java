@@ -111,6 +111,10 @@ public class AdbCrypto {
         return crypto;
     }
 
+    /**
+     * 随机生成RSA密钥对
+     * 密钥长度，范围：512～2048
+     */
     public static AdbCrypto generateAdbKeyPair(AdbBase64 base64) throws NoSuchAlgorithmException {
         AdbCrypto crypto = new AdbCrypto();
         KeyPairGenerator rsaKeyPg = KeyPairGenerator.getInstance("RSA");
@@ -120,6 +124,10 @@ public class AdbCrypto {
         return crypto;
     }
 
+    /**
+     * If type is TOKEN(1), data is a random token that
+     * the recipient can sign with a private key.
+     */
     public byte[] signAdbTokenPayload(byte[] payload) throws GeneralSecurityException {
         Cipher c = Cipher.getInstance("RSA/ECB/NoPadding");
         c.init(1, this.keyPair.getPrivate());
@@ -127,6 +135,10 @@ public class AdbCrypto {
         return c.doFinal(payload);
     }
 
+    /**
+     * Once the recipient has tried all its private keys, it can reply with an
+     * AUTH packet where type is RSAPUBLICKEY(3) and data is the public key.
+     */
     public byte[] getAdbPublicKeyPayload() throws IOException {
         byte[] convertedKey = convertRsaPublicKeyToAdbFormat((RSAPublicKey)this.keyPair.getPublic());
         StringBuilder keyString = new StringBuilder(720);
