@@ -1,4 +1,4 @@
-package com.example.pikamouse.learn_adb;
+package com.example.pikamouse.learn_adb.adb.test;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;

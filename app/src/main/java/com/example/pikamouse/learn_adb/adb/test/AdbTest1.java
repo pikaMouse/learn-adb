@@ -1,4 +1,4 @@
-package com.example.pikamouse.learn_adb;
+package com.example.pikamouse.learn_adb.adb.test;
 
 import java.io.BufferedReader;
 import java.io.IOException;

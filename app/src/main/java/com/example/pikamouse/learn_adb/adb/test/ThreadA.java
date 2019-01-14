@@ -1,4 +1,4 @@
-package com.example.pikamouse.learn_adb;
+package com.example.pikamouse.learn_adb.adb.test;
 
 /**
  * create by jiangfeng 2019/1/14
